@@ -1,32 +1,4 @@
-# motd script
-    - path: /usr/local/bin/geco-motd
-      mode: 0755
-      contents:
-        inline: |
-          #!/bin/bash
-          
-          OUT=/etc/console-login-helper-messages/motd.d/22_geco.motd
-          
-          echo -e "\nWelcome on a server powered by\n" > ${OUT}
-          echo -e '\e[33m    ______                      _ ______' >> ${OUT}
-          echo -e '\e[33m   / ____/__  _________        (_)_  __/' >> ${OUT}
-          echo -e '\e[33m  / / __/ _ \/ ___/ __ \  __   / / / /' >> ${OUT}
-          echo -e '\e[33m / /_/ /  __/ /__/ /_/ / |__| / / / /' >> ${OUT}
-          echo -e '\e[33m \____/\___/\___/\____/      /_/ /_/\n\n' >> ${OUT}
-          eval "$(grep -E "^(NAME=|VARIANT=)" /etc/os-release)" && echo -e "\e[33mOperating System:\e[0m ${NAME} ${VARIANT}" >> ${OUT}
-          eval "$(grep ^OSTREE_VERSION /etc/os-release)" && echo -e "\e[33mVersion:\e[0m ${OSTREE_VERSION}" >> ${OUT}
-          echo -e "\e[33mKernel:\e[0m $(uname -r)" >> ${OUT}
-          echo -ne "\e[33mCPU:\e[0m $(grep ^processor /proc/cpuinfo | wc -l)" >> ${OUT}
-          echo "$(grep "^model name" /proc/cpuinfo | head -n1 | awk -F: '{print $2}' | awk -F@ '{print $1}')" >> ${OUT}
-          echo -e "\e[33mRAM:\e[0m $(free | grep Mem | awk '{print $2}' | xargs -i expr {} / 1000 / 1000 | xargs -i printf '%.0fG\n' {})" >> ${OUT}
-          i=0; for disk in $(ls /dev/sd[a-z] /dev/vd[a-z] 2>/dev/null); do
-                lsblk > /dev/null 2>&1 || break
-                echo -e "\e[33mHDD${i} ($(basename ${disk})):\e[0m$(lsblk -n --nodeps ${disk} -o size)" >> ${OUT}
-                i=$((i+1))
-          done
-          echo -e "\n\e[33mHostname:\e[0m "$(hostname -f) >> ${OUT}  
-          sleep 1; echo -e "\e[33mIPv4 Address:\e[0m $(ip route get 8.8.8.8 | awk 'NR==1 {print $7}')" >> ${OUT}
-          echo -e "\e[33mPublic IPv4 Address:\e[0m $(curl https://ipv4.icanhazip.com)\n" >> ${OUT}
+
 
 # apply cloudinit script
     - path: /usr/local/bin/geco-cloudinit
@@ -62,7 +34,7 @@
           sysprep() {
             echo "Remove all ssh system keys..."
             rm -f /etc/ssh/ssh_host_*
-            
+
             echo "Clean ostree database..."
             rpm-ostree cleanup --base --pending --rollback --repomd
 
@@ -90,9 +62,9 @@
             echo -e "\nShutdown now..."
             poweroff
 
-            exit 0  
+            exit 0
           }
-          [[ "x${1}" == "xsysprep" ]]&& sysprep          
+          [[ "x${1}" == "xsysprep" ]]&& sysprep
 
           setup_yq() {
             local VER=3.4.1
@@ -246,8 +218,7 @@
             nmcli connection reload
             nmcli networking off
             nmcli networking on
-            systemctl restart geco-motd.service
-            systemctl restart console-login-helper-messages-motdgen.service
+
           }
 
           echo -n "[INFO]: Cloudinit: save instance id... "
@@ -258,52 +229,16 @@
             /bin/systemctl --no-block reboot
           }
 
-          exit 0 
-
-# geco-issue
-    - path: /etc/console-login-helper-messages/issue.d/00_geco.issue
-      mode: 0644
-      contents:
-        inline: |
-
-          Welcome on a server powered by
-
-            ,----.                                   ,--. ,--------.
-           '  .-./     ,---.   ,---.  ,---.  ,-----. `--' '--.  .--'
-           |  | .---. | .-. : | .--' | .-. | '-----' ,--.    |  |
-           '  '--'  | \\   --. \\ `--. ' '-' '         |  |    |  |
-            `------'   `----'  `---'  `---'          `--'    `--'
-            
-          .
+          exit 0
 
 # kernel config
     - path: /etc/sysctl.d/20-silence-audit.conf
-      mode: 0644      
+      mode: 0644
       contents:
         inline: |
           # Raise console message logging level from DEBUG (7) to WARNING (4)
           # to hide audit messages from the interactive console
           kernel.printk=4
-
-
-# geco-motd.service
-systemd:
-  units:
-    - name: geco-motd.service
-      enabled: true
-      contents: |
-        [Unit]
-        Description=Geco-iT Motd
-        Before=console-login-helper-messages-motdgen.service
-        After=network-online.target
-
-        [Service]
-        Type=oneshot
-        ExecStart=/usr/local/bin/geco-motd
-        RemainAfterExit=yes
-
-        [Install]
-        WantedBy=multi-user.target
 
 # geco-cloudinit: apply cloudinit settings on boot
     - name: geco-cloudinit.service
@@ -313,13 +248,13 @@ systemd:
         Description=Geco-iT Cloudinit
         Wants=network-online.target
         After=network.target network-online.target
- 
+
         [Service]
         Type=oneshot
         TimeoutStartSec=0
         ExecStart=/usr/local/bin/geco-cloudinit
         RemainAfterExit=yes
- 
+
         [Install]
         WantedBy=multi-user.target
 
@@ -347,7 +282,7 @@ systemd:
 # fstrim
     - name: fstrim.timer
       enabled: true
- 
+
     - name: fstrim.service
       dropins:
         - name: override.conf

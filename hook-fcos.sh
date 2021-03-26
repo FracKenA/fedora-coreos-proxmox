@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #set -e
- 
+
 vmid="$1"
 phase="$2"
 
@@ -19,7 +19,7 @@ setup_fcoreosct()
         local ARCH=x86_64
         local OS=unknown-linux-gnu # Linux
         local DOWNLOAD_URL=https://github.com/coreos/fcct/releases/download
- 
+
         [[ -x /usr/local/bin/fcos-ct ]]&& [[ "x$(/usr/local/bin/fcos-ct --version | awk '{print $NF}')" == "x${CT_VER}" ]]&& return 0
         echo "Setup Fedora CoreOS config transpiler..."
         rm -f /usr/local/bin/fcos-ct
@@ -55,7 +55,7 @@ then
 	[[ -e ${COREOS_FILES_PATH}/${vmid}.ign ]]&& exit 0 # already done
 
 	mkdir -p ${COREOS_FILES_PATH} || exit 1
-		
+
 	# check config
 	cipasswd="$(qm cloudinit dump ${vmid} user | ${YQ} - 'password' 2> /dev/null)" || true # can be empty
 	[[ "x${cipasswd}" != "x" ]]&& VALIDCONFIG=true
@@ -87,9 +87,9 @@ then
 	echo "      overwrite: true" >> ${COREOS_FILES_PATH}/${vmid}.yaml
 	echo "      contents:" >> ${COREOS_FILES_PATH}/${vmid}.yaml
 	echo "        inline: |" >> ${COREOS_FILES_PATH}/${vmid}.yaml
-	echo -e "          ${hostname,,}\n" >> ${COREOS_FILES_PATH}/${vmid}.yaml 
+	echo -e "          ${hostname,,}\n" >> ${COREOS_FILES_PATH}/${vmid}.yaml
 	echo "[done]"
-	
+
 	echo -n "Fedora CoreOS: Generate yaml network block... "
 	netcards="$(qm cloudinit dump ${vmid} network | ${YQ} - 'config[*].name' 2> /dev/null | wc -l)"
 	nameservers="$(qm cloudinit dump ${vmid} network | ${YQ} - "config[${netcards}].address[*]" | paste -s -d ";" -)"
@@ -117,7 +117,7 @@ then
 		echo -e "\n          [ipv4]" >> ${COREOS_FILES_PATH}/${vmid}.yaml
 		echo "          method=manual" >> ${COREOS_FILES_PATH}/${vmid}.yaml
 		echo "          addresses=${ipv4}/${netmask}" >> ${COREOS_FILES_PATH}/${vmid}.yaml
-		echo "          gateway=${gw}" >> ${COREOS_FILES_PATH}/${vmid}.yaml 
+		echo "          gateway=${gw}" >> ${COREOS_FILES_PATH}/${vmid}.yaml
 		echo "          dns=${nameservers}" >> ${COREOS_FILES_PATH}/${vmid}.yaml
 		echo -e "          dns-search=${searchdomain}\n" >> ${COREOS_FILES_PATH}/${vmid}.yaml
 	done
